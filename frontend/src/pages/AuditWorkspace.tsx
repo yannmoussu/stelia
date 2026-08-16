@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { PageHeader } from '../components/layout/PageHeader';
 import { RecorderPanel } from '../components/recorder/RecorderPanel';
-import { TranscriptBox } from '../components/recorder/TranscriptBox';
 import { BuildingPanel } from '../components/building/BuildingPanel';
 import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
@@ -15,11 +14,24 @@ export const AuditWorkspace: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      const foundAudit = auditService.getAudit(id);
-      setAudit(foundAudit);
-      setIsLoading(false);
-    }
+    const fetchAudit = async () => {
+      try {
+        if (!id) {
+          console.error("[AuditWorkspace] No audit ID provided in URL");
+          setAudit(null);
+        } else {
+          const foundAudit = auditService.getAudit(id);
+          setAudit(foundAudit);
+        }
+      } catch (error) {
+        console.error("[AuditWorkspace] Error fetching audit:", error);
+        setAudit(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAudit();
   }, [id]);
 
   if (isLoading) {
@@ -44,7 +56,12 @@ export const AuditWorkspace: React.FC = () => {
     );
   }
 
-  const demoTranscript = "Mur nord en brique creuse de 20 centimètres, isolation inconnue. Fenêtre PVC double vitrage dans le salon, environ 1 mètre 20 sur 1 mètre 35. Chaudière gaz à condensation installée en 2019.";
+  const handleTranscriptUpdate = (newTranscript: string) => {
+    if (!audit) return;
+
+    setAudit(prev => prev ? { ...prev, transcript: newTranscript } : null);
+    auditService.updateAudit(audit.id, { transcript: newTranscript });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -68,8 +85,10 @@ export const AuditWorkspace: React.FC = () => {
                 Observations
               </h2>
               <div className="flex flex-col gap-6">
-                <RecorderPanel />
-                <TranscriptBox text={demoTranscript} />
+                <RecorderPanel
+                  initialTranscript={audit.transcript}
+                  onTranscriptUpdate={handleTranscriptUpdate}
+                />
               </div>
             </div>
           </div>
@@ -81,9 +100,9 @@ export const AuditWorkspace: React.FC = () => {
                 propertyType: audit.propertyType,
                 surfaceM2: audit.surfaceM2,
                 constructionYear: audit.constructionYear,
-                walls: [], // V0: empty for new audits
-                windows: [], // V0: empty for new audits
-                heating: null, // V0: empty for new audits
+                walls: [],
+                windows: [],
+                heating: null,
               }} />
             </div>
           </div>

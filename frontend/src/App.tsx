@@ -9,8 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/audit/new" element={<NewAudit />} />
-        <Route path="/audit/demo" element={<AuditWorkspace />} />
-        {/* Fallback for other audits to demo for now */}
+        {/* The :id parameter handles both real IDs and the 'demo' ID */}
         <Route path="/audit/:id" element={<AuditWorkspace />} />
       </Routes>
     </BrowserRouter>

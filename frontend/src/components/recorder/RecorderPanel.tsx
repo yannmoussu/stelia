@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Mic, Square } from 'lucide-react';
 import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { TranscriptBox } from './TranscriptBox';
 
-export const RecorderPanel: React.FC = () => {
+interface RecorderPanelProps {
+  initialTranscript?: string;
+  onTranscriptUpdate: (transcript: string) => void;
+}
+
+export const RecorderPanel: React.FC<RecorderPanelProps> = ({ initialTranscript, onTranscriptUpdate }) => {
   const {
     isListening,
     transcript,
@@ -13,6 +18,12 @@ export const RecorderPanel: React.FC = () => {
     stop,
     isSupported
   } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (transcript) {
+      onTranscriptUpdate(`${initialTranscript || ''} ${transcript}`.trim());
+    }
+  }, [transcript, initialTranscript, onTranscriptUpdate]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -80,9 +91,9 @@ export const RecorderPanel: React.FC = () => {
         </>
       )}
 
-      { (transcript || interimTranscript) && (
+      { (initialTranscript || transcript || interimTranscript) && (
         <TranscriptBox
-          text={`${transcript} ${interimTranscript}`}
+          text={`${initialTranscript || ''} ${transcript} ${interimTranscript}`.trim()}
         />
       )}
     </div>

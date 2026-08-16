@@ -17,6 +17,7 @@ export interface Audit {
   clientName: string;
   clientEmail?: string;
   clientPhone?: string;
+  transcript?: string;
 }
 
 export interface Wall {
