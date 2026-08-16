@@ -3,11 +3,20 @@ export type AuditStatus = "draft" | "in_progress" | "completed";
 export interface Audit {
   id: string;
   address: string;
+  addressComplement?: string;
+  postalCode: string;
+  city: string;
   propertyType: string;
   surfaceM2: number;
+  constructionYear?: number;
   date: string;
   status: AuditStatus;
   progress: number; // 0 to 100
+  diagnosticType: 'DPE' | 'Audit Énergétique';
+  notes?: string;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
 }
 
 export interface Wall {

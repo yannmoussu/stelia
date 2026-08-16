@@ -17,10 +17,10 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-brand-blue text-white text-sm font-medium rounded-md hover:bg-brand-blue-dark transition-colors">
+        <Link to="/audit/new" className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-brand-blue text-white text-sm font-medium rounded-md hover:bg-brand-blue-dark transition-colors">
           <Plus size={16} />
           Nouvel audit
-        </button>
+        </Link>
         <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300 transition-colors">
           <User size={18} />
         </div>
