@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { PageHeader } from '../components/layout/PageHeader';
 import { RecorderPanel } from '../components/recorder/RecorderPanel';
@@ -34,6 +34,13 @@ export const AuditWorkspace: React.FC = () => {
     fetchAudit();
   }, [id]);
 
+  const handleTranscriptUpdate = useCallback((newTranscript: string) => {
+    if (!id) return;
+
+    setAudit(prev => prev ? { ...prev, transcript: newTranscript } : null);
+    auditService.updateAudit(id, { transcript: newTranscript });
+  }, [id]);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50">Chargement...</div>;
   }
@@ -55,13 +62,6 @@ export const AuditWorkspace: React.FC = () => {
       </div>
     );
   }
-
-  const handleTranscriptUpdate = (newTranscript: string) => {
-    if (!audit) return;
-
-    setAudit(prev => prev ? { ...prev, transcript: newTranscript } : null);
-    auditService.updateAudit(audit.id, { transcript: newTranscript });
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

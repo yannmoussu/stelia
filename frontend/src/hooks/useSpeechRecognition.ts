@@ -47,25 +47,32 @@ export function useSpeechRecognition() {
   const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const lastFinalIndexRef = useRef(-1);
 
   useEffect(() => {
+    console.log('[Speech] EFFECT MOUNT');
     if (!SpeechRecognition) return;
 
+    const instanceId = Math.floor(Math.random() * 10000);
+    console.log(`[Speech] CREATE instance ${instanceId}`);
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'fr-FR';
 
     recognition.onstart = () => {
+      console.log(`[Speech] START instance ${instanceId}`);
       setIsListening(true);
       setError(null);
     };
 
     recognition.onend = () => {
+      console.log(`[Speech] END instance ${instanceId}`);
       setIsListening(false);
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.log(`[Speech] ERROR instance ${instanceId}: ${event.error}`);
       if (event.error === 'not-allowed') {
         setError("L'accès au microphone a été refusé. Autorisez le microphone dans les paramètres de votre navigateur.");
       } else {
@@ -75,25 +82,44 @@ export function useSpeechRecognition() {
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let final = '';
+      console.log(`[Speech] RESULT instance ${instanceId}`);
+      console.log(`instance: ${instanceId}`);
+      console.log(`resultIndex: ${event.resultIndex}`);
+      console.log(`resultsLength: ${event.results.length}`);
+
+      for (let i = 0; i < event.results.length; ++i) {
+        const result = event.results[i];
+        console.log(`  result[${i}].isFinal: ${result.isFinal}`);
+        console.log(`  result[${i}].text: ${result[0].transcript}`);
+      }
+
+      let newFinalPieces = '';
       let interim = '';
 
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
+      // We start from 0 to ensure we catch any results that became final
+      // but use lastFinalIndexRef to ensure we only add them once.
+      for (let i = 0; i < event.results.length; ++i) {
         const result = event.results[i];
         if (result.isFinal) {
-          final += result[0].transcript;
-        } else {
+          if (i > lastFinalIndexRef.current) {
+            newFinalPieces += result[0].transcript;
+            lastFinalIndexRef.current = i;
+          }
+        } else if (i >= event.resultIndex) {
           interim += result[0].transcript;
         }
       }
 
-      setTranscript((prev) => prev + final);
+      if (newFinalPieces) {
+        setTranscript((prev) => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + newFinalPieces);
+      }
       setInterimTranscript(interim);
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      console.log('[Speech] EFFECT CLEANUP');
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
@@ -107,6 +133,10 @@ export function useSpeechRecognition() {
     }
 
     try {
+      console.log(`[Speech] START CALLED`);
+      setTranscript('');
+      setInterimTranscript('');
+      lastFinalIndexRef.current = -1;
       recognitionRef.current?.start();
     } catch (e) {
       console.error("Speech recognition start error:", e);

@@ -21,9 +21,11 @@ export const RecorderPanel: React.FC<RecorderPanelProps> = ({ initialTranscript,
 
   useEffect(() => {
     if (transcript) {
-      onTranscriptUpdate(`${initialTranscript || ''} ${transcript}`.trim());
+      // We only send the session's cumulative transcript.
+      // The parent should handle how it combines this with the audit's existing transcript.
+      onTranscriptUpdate(transcript);
     }
-  }, [transcript, initialTranscript, onTranscriptUpdate]);
+  }, [transcript, onTranscriptUpdate]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -93,7 +95,7 @@ export const RecorderPanel: React.FC<RecorderPanelProps> = ({ initialTranscript,
 
       { (initialTranscript || transcript || interimTranscript) && (
         <TranscriptBox
-          text={`${initialTranscript || ''} ${transcript} ${interimTranscript}`.trim()}
+          text={`${initialTranscript || ''} ${interimTranscript}`.trim()}
         />
       )}
     </div>
