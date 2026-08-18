@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from '../components/layout/Navbar';
 import { PageHeader } from '../components/layout/PageHeader';
-import { AuditList } from '../components/audit/AuditList';
-import { auditService } from '../services/auditService';
+import { ConsultationList } from '../components/consultation/ConsultationList';
+import { consultationService } from '../services/consultationService';
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Dashboard: React.FC = () => {
-  const [audits, setAudits] = useState<any[]>([]);
+  const [consultations, setConsultations] = useState<any[]>([]);
 
   useEffect(() => {
-    setAudits(auditService.getAudits());
+    setConsultations(consultationService.getConsultations());
   }, []);
 
   return (
@@ -18,16 +18,16 @@ export const Dashboard: React.FC = () => {
       <Navbar />
       <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
         <PageHeader
-          title="Mes audits"
-          subtitle="Centralisez vos observations et accélérez vos diagnostics."
+          title="Mes consultations"
+          subtitle="Assistant de rédaction de comptes rendus pour orthoptistes."
         >
-          <Link to="/audit/new" className="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white text-sm font-medium rounded-md hover:bg-brand-blue-dark transition-colors">
+          <Link to="/consultation/new" className="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white text-sm font-medium rounded-md hover:bg-brand-blue-dark transition-colors">
             <Plus size={18} />
-            Nouvel audit
+            Nouvelle consultation
           </Link>
         </PageHeader>
 
-        <AuditList audits={audits} />
+        <ConsultationList consultations={consultations} />
       </main>
     </div>
   );

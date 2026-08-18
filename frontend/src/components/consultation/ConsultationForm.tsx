@@ -1,39 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { PropertyInformation } from './PropertyInformation';
-import { AuditInformation } from './AuditInformation';
-import { ClientInformation } from './ClientInformation';
+import { ConsultationInformation } from './ConsultationInformation';
 
-interface AuditFormProps {
+interface ConsultationFormProps {
   onSubmit: (values: any) => void;
 }
 
-export const AuditForm: React.FC<AuditFormProps> = ({ onSubmit }) => {
+export const ConsultationForm: React.FC<ConsultationFormProps> = ({ onSubmit }) => {
   const [values, setValues] = useState({
-    address: '',
-    addressComplement: '',
-    postalCode: '',
-    city: '',
-    propertyType: '',
-    surfaceM2: '',
-    constructionYear: '',
-    diagnosticType: '',
+    patientName: '',
+    consultationType: '',
     notes: '',
-    clientName: '',
-    clientEmail: '',
-    clientPhone: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = (vals: typeof values) => {
     const newErrors: Record<string, string> = {};
-    if (!vals.address) newErrors.address = 'L\'adresse est obligatoire';
-    if (!vals.postalCode) newErrors.postalCode = 'Le code postal est obligatoire';
-    if (!vals.city) newErrors.city = 'La ville est obligatoire';
-    if (!vals.propertyType) newErrors.propertyType = 'Le type de bien est obligatoire';
-    if (!vals.surfaceM2 || Number(vals.surfaceM2) <= 0) newErrors.surfaceM2 = 'Une surface valide est obligatoire';
-    if (!vals.diagnosticType) newErrors.diagnosticType = 'Le type de diagnostic est obligatoire';
-    if (!vals.clientName) newErrors.clientName = 'Le nom du client est obligatoire';
+    if (!vals.patientName) newErrors.patientName = 'Le nom du patient est obligatoire';
+    if (!vals.consultationType) newErrors.consultationType = 'Le type de consultation est obligatoire';
     return newErrors;
   };
 
@@ -65,17 +49,7 @@ export const AuditForm: React.FC<AuditFormProps> = ({ onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-10">
-      <PropertyInformation
-        values={values}
-        errors={errors}
-        onChange={handleChange}
-      />
-      <AuditInformation
-        values={values}
-        errors={errors}
-        onChange={handleChange}
-      />
-      <ClientInformation
+      <ConsultationInformation
         values={values}
         errors={errors}
         onChange={handleChange}
@@ -87,7 +61,7 @@ export const AuditForm: React.FC<AuditFormProps> = ({ onSubmit }) => {
           disabled={!isValid}
           className="px-6 py-2.5 bg-brand-blue text-white font-medium rounded-md hover:bg-brand-blue-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
-          Créer l'audit
+          Créer la consultation
         </button>
       </div>
     </form>

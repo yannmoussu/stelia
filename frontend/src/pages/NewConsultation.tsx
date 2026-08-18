@@ -2,17 +2,17 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../components/layout/Navbar';
 import { PageHeader } from '../components/layout/PageHeader';
-import { AuditForm } from '../components/audit/AuditForm';
+import { ConsultationForm } from '../components/consultation/ConsultationForm';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { auditService } from '../services/auditService';
+import { consultationService } from '../services/consultationService';
 
-export const NewAudit: React.FC = () => {
+export const NewConsultation: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleCreateAudit = (formData: any) => {
-    const newAudit = auditService.createAudit(formData);
-    navigate(`/audit/${newAudit.id}`);
+  const handleCreateConsultation = (formData: any) => {
+    const newConsultation = consultationService.createConsultation(formData);
+    navigate(`/consultation/${newConsultation.id}`);
   };
 
   return (
@@ -22,16 +22,16 @@ export const NewAudit: React.FC = () => {
         <div className="mb-6">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-brand-blue transition-colors mb-4 group">
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            Retour aux audits
+            Retour aux consultations
           </Link>
           <PageHeader
-            title="Nouvel audit"
-            subtitle="Renseignez les informations du bien avant de commencer l'inspection."
+            title="Nouvelle consultation"
+            subtitle="Renseignez les informations du patient pour débuter la séance."
           />
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
-          <AuditForm onSubmit={handleCreateAudit} />
+          <ConsultationForm onSubmit={handleCreateConsultation} />
         </div>
       </main>
     </div>

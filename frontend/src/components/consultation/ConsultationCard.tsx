@@ -1,22 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import type { Audit, AuditStatus } from '../../types/audit';
+import type { Consultation, ConsultationStatus } from '../../types/consultation';
 import { ChevronRight, FileText } from 'lucide-react';
 
-interface AuditCardProps {
-  audit: Audit;
+interface ConsultationCardProps {
+  consultation: Consultation;
 }
 
-const statusStyles: Record<AuditStatus, string> = {
+const statusStyles: Record<ConsultationStatus, string> = {
   draft: 'bg-gray-100 text-gray-600 border-gray-200',
   in_progress: 'bg-blue-50 text-blue-600 border-blue-100',
   completed: 'bg-green-50 text-green-600 border-green-100',
 };
 
-export const AuditCard: React.FC<AuditCardProps> = ({ audit }) => {
+export const ConsultationCard: React.FC<ConsultationCardProps> = ({ consultation }) => {
   return (
     <Link
-      to={`/audit/${audit.id === '2' ? 'demo' : audit.id}`}
+      to={`/consultation/${consultation.id === '2' ? 'demo' : consultation.id}`}
       className="group block p-4 bg-white border border-gray-200 rounded-lg hover:border-brand-blue hover:shadow-sm transition-all"
     >
       <div className="flex items-start justify-between">
@@ -26,20 +26,18 @@ export const AuditCard: React.FC<AuditCardProps> = ({ audit }) => {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 group-hover:text-brand-blue transition-colors">
-              {audit.address}
+              {consultation.patientName}
             </h3>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500">
-              <span>{audit.propertyType}</span>
+              <span>{consultation.consultationType}</span>
               <span>•</span>
-              <span>{audit.surfaceM2} m²</span>
-              <span>•</span>
-              <span>{new Date(audit.date).toLocaleDateString('fr-FR')}</span>
+              <span>{new Date(consultation.consultationDate).toLocaleDateString('fr-FR')}</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${statusStyles[audit.status]}`}>
-            {audit.status === 'draft' ? 'Brouillon' : audit.status === 'in_progress' ? 'En cours' : 'Terminé'}
+          <span className={`px-2 py-0.5 text-xs font-medium border rounded-full ${statusStyles[consultation.status]}`}>
+            {consultation.status === 'draft' ? 'Brouillon' : consultation.status === 'in_progress' ? 'En cours' : 'Terminé'}
           </span>
           <ChevronRight size={18} className="text-gray-300 group-hover:text-brand-blue transition-colors" />
         </div>
