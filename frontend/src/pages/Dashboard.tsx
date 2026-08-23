@@ -10,7 +10,15 @@ export const Dashboard: React.FC = () => {
   const [consultations, setConsultations] = useState<any[]>([]);
 
   useEffect(() => {
-    setConsultations(consultationService.getConsultations());
+    const loadConsultations = async () => {
+      try {
+        const data = await consultationService.getConsultations();
+        setConsultations(data);
+      } catch (error) {
+        console.error("Error loading consultations:", error);
+      }
+    };
+    loadConsultations();
   }, []);
 
   return (

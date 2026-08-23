@@ -10,9 +10,14 @@ import { consultationService } from '../services/consultationService';
 export const NewConsultation: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleCreateConsultation = (formData: any) => {
-    const newConsultation = consultationService.createConsultation(formData);
-    navigate(`/consultation/${newConsultation.id}`);
+  const handleCreateConsultation = async (formData: any) => {
+    try {
+      const newConsultation = await consultationService.createConsultation(formData);
+      navigate(`/consultation/${newConsultation.id}`);
+    } catch (error) {
+      console.error("Error creating consultation:", error);
+      alert("Une erreur est survenue lors de la création de la consultation.");
+    }
   };
 
   return (

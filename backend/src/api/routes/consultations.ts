@@ -45,8 +45,31 @@ export async function consultationRoutes(fastify: FastifyInstance) {
     return consultation;
   });
 
+  // Update consultation
+  fastify.put('/api/consultations/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const data = request.body as any;
+
+    const updated = await repo.update(id, data);
+    if (!updated) {
+      return reply.status(404).send({ error: 'Consultation not found' });
+    }
+    return updated;
+  });
+
+  // Delete consultation
+  fastify.delete('/api/consultations/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const deleted = await repo.delete(id);
+    if (!deleted) {
+      return reply.status(404).send({ error: 'Consultation not found' });
+    }
+    return reply.status(204).send();
+  });
+
   // Update transcript
   fastify.post('/api/consultations/:id/transcript', async (request, reply) => {
+
     const { id } = request.params as { id: string };
     const { transcript } = request.body as { transcript: string };
 

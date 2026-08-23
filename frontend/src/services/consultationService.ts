@@ -1,71 +1,63 @@
-import type { Consultation } from '../types/consultation';
-import { MOCK_CONSULTATIONS } from '../data/mockConsultations';
-
-const STORAGE_KEY = 'voxortho_consultations';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 export const consultationService = {
-  getConsultations(): Consultation[] {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
+  async getConsultations(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/consultations`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch consultations');
     }
-    // Fallback to mock consultations if nothing is stored, but save them first for consistency
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_CONSULTATIONS));
-    return MOCK_CONSULTATIONS;
+    return response.json();
   },
 
-  getConsultation(id: string): Consultation | null {
-    if (id === 'demo') {
-      return {
-        ...MOCK_CONSULTATIONS[1],
-        id: 'demo',
-        transcript: "Patient présente une fatigue visuelle marquée en fin de journée. Convergence instable. Reflexes pupillaires normaux. Observation d'une légère hétérophorie.",
-      };
+  async getConsultation(id: string): Promise<any | null> {
+    const response = await fetch(`${API_BASE_URL}/consultations/${id}`);
+    if (response.status === 404) {
+      return null;
     }
-
-    const consultations = this.getConsultations();
-    return consultations.find(c => c.id === id) || null;
+    if (!response.ok) {
+      throw new Error('Failed to fetch consultation');
+    }
+    return response.json();
   },
 
-  createConsultation(data: Partial<Consultation>): Consultation {
-    const consultations = this.getConsultations();
-
-    const newConsultation: Consultation = {
-      id: Math.random().toString(36).substr(2, 9),
-      patientName: data.patientName || 'Patient Inconnu',
-      consultationDate: data.consultationDate || new Date().toISOString().split('T')[0],
-      consultationType: data.consultationType || 'Autre',
-      status: 'draft',
-      progress: 0,
-      notes: data.notes,
-      transcript: '',
-    };
-
-    const updatedConsultations = [...consultations, newConsultation];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedConsultations));
-    return newConsultation;
+  async createConsultation(data: any): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/consultations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to create consultation');
+    }
+    return response.json();
   },
 
-  updateConsultation(id: string, data: Partial<Consultation>): Consultation | null {
-    if (id === 'demo') return null; // Demo consultation is read-only
-
-    const consultations = this.getConsultations();
-    const index = consultations.findIndex(c => c.id === id);
-    if (index === -1) return null;
-
-    const updatedConsultation = { ...consultations[index], ...data };
-    consultations[index] = updatedConsultation;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
-    return updatedConsultation;
+  async updateConsultation(id: string, data: any): Promise<any | null> {
+    const response = await fetch(`${API_BASE_URL}/consultations/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (response.status === 404) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error('Failed to update consultation');
+    }
+    return response.json();
   },
 
-  deleteConsultation(id: string): void {
-    if (id === 'demo') return;
-    const consultations = this.getConsultations().filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
+  async deleteConsultation(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/consultations/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete consultation');
+    }
   },
 
-  clearStorage(): void {
-    localStorage.removeItem(STORAGE_KEY);
-  }
+  async clearStorage(): Promise<void> {
+    // This is not implemented on the backend for security reasons
+    console.warn('clearStorage is not supported by the backend API');
+  },
 };

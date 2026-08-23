@@ -20,7 +20,7 @@ export const ConsultationWorkspace: React.FC = () => {
           console.error("[ConsultationWorkspace] No consultation ID provided in URL");
           setConsultation(null);
         } else {
-          const foundConsultation = consultationService.getConsultation(id);
+          const foundConsultation = await consultationService.getConsultation(id);
           setConsultation(foundConsultation);
         }
       } catch (error) {
@@ -34,11 +34,15 @@ export const ConsultationWorkspace: React.FC = () => {
     fetchConsultation();
   }, [id]);
 
-  const handleTranscriptUpdate = useCallback((newTranscript: string) => {
+  const handleTranscriptUpdate = useCallback(async (newTranscript: string) => {
     if (!id) return;
 
     setConsultation(prev => prev ? { ...prev, transcript: newTranscript } : null);
-    consultationService.updateConsultation(id, { transcript: newTranscript });
+    try {
+      await consultationService.updateConsultation(id, { transcript: newTranscript });
+    } catch (error) {
+      console.error("Error updating transcript:", error);
+    }
   }, [id]);
 
   if (isLoading) {
