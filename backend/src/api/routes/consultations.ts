@@ -3,104 +3,144 @@ import { IConsultationRepository } from '../../repositories/consultation.reposit
 import { IAIService } from '../../services/ai.service';
 import { ConsultationSchema } from '../../validation/consultation.validation';
 import { z } from 'zod';
+import { DEFAULT_CONSULTATION_STRUCTURE } from '../../domain/models/defaults';
 
 export async function consultationRoutes(fastify: FastifyInstance) {
-  // We can use a pattern where we attach the repo and service to the fastify instance,
-  // or just instantiate them here (though that's less flexible).
-  // For this V0, we'll use the fastify.decorate pattern or just instantiate here.
-
-  // For simplicity and avoid complex plugin dependency management,
-  // let's assume we'll pass them via decorators in server.ts.
   const repo = fastify.consultationRepo;
   const aiService = fastify.aiService;
 
   // Create a consultation
   fastify.post('/api/consultations', async (request, reply) => {
     try {
-      const data = ConsultationSchema.parse(request.body);
-      const consultation = await repo.create({
-        ...data,
-      } as any);
+      // Use partial validation for creation to accept incomplete data
+      const partialData = ConsultationSchema.partial().parse(request.body);
+
+      // Merge with default structure to ensure the final object is complete
+      const fullData = {
+        ...DEFAULT_CONSULTATION_STRUCTURE,
+        ...partialData,
+      };
+
+      // Ensure nested objects are also merged if they were provided partially
+      if (partialData.patient) {
+        fullData.patient = { ...DEFAULT_CONSULTATION_STRUCTURE.patient, ...partialData.patient };
+      }
+      if (partialData.contexte) {
+        fullData.contexte = { ...DEFAULT_CONSULTATION_STRUCTURE.contexte, ...partialData.contexte };
+      }
+
+      const consultation = await repo.create(fullData as any);
       return consultation;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Invalid data', details: error.errors });
+        console.error('Zod validation error during creation:', JSON.stringify(error.issues, null, 2));
+        return reply.status(400).send({ error: 'Invalid data', details: error.issues });
       }
+      console.error('Unexpected error during creation:', error);
       throw error;
     }
   });
 
   // List all consultations
-  fastify.get('/api/consultations', async () => {
-    return await repo.findAll();
+  fastify.get('/api/consultations', async (request, reply) => {
+    try {
+      return await repo.findAll();
+    } catch (error) {
+      console.error('Error listing consultations:', error);
+      return reply.status(500).send({ error: 'Internal server error' });
+    }
   });
 
   // Get one consultation
   fastify.get('/api/consultations/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const consultation = await repo.findById(id);
-    if (!consultation) {
-      return reply.status(404).send({ error: 'Consultation not found' });
+    try {
+      const { id } = request.params as { id: string };
+      const consultation = await repo.findById(id);
+      if (!consultation) {
+        return reply.status(404).send({ error: 'Consultation not found' });
+      }
+      return consultation;
+    } catch (error) {
+      console.error(`Error fetching consultation ${request.params.id}:`, error);
+      return reply.status(500).send({ error: 'Internal server error' });
     }
-    return consultation;
   });
 
   // Update consultation
   fastify.put('/api/consultations/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const data = request.body as any;
+    try {
+      const { id } = request.params as { id: string };
+      const data = request.body as any;
 
-    const updated = await repo.update(id, data);
-    if (!updated) {
-      return reply.status(404).send({ error: 'Consultation not found' });
+      const updated = await repo.update(id, data);
+      if (!updated) {
+        return reply.status(404).send({ error: 'Consultation not found' });
+      }
+      return updated;
+    } catch (error) {
+      console.error(`Error updating consultation ${request.params.id}:`, error);
+      return reply.status(500).send({ error: 'Internal server error' });
     }
-    return updated;
   });
 
   // Delete consultation
   fastify.delete('/api/consultations/:id', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const deleted = await repo.delete(id);
-    if (!deleted) {
-      return reply.status(404).send({ error: 'Consultation not found' });
+    try {
+      const { id } = request.params as { id: string };
+      const deleted = await repo.delete(id);
+      if (!deleted) {
+        return reply.status(404).send({ error: 'Consultation not found' });
+      }
+      return reply.status(204).send();
+    } catch (error) {
+      console.error(`Error deleting consultation ${request.params.id}:`, error);
+      return reply.status(500).send({ error: 'Internal server error' });
     }
-    return reply.status(204).send();
   });
 
   // Update transcript
   fastify.post('/api/consultations/:id/transcript', async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const { transcript } = request.body as { transcript: string };
 
-    const { id } = request.params as { id: string };
-    const { transcript } = request.body as { transcript: string };
+      if (transcript === undefined) {
+        return reply.status(400).send({ error: 'Transcript is required' });
+      }
 
-    if (transcript === undefined) {
-      return reply.status(400).send({ error: 'Transcript is required' });
+      const updated = await repo.update(id, { transcript });
+      if (!updated) {
+        return reply.status(404).send({ error: 'Consultation not found' });
+      }
+      return updated;
+    } catch (error) {
+      console.error(`Error updating transcript for consultation ${request.params.id}:`, error);
+      return reply.status(500).send({ error: 'Internal server error' });
     }
-
-    const updated = await repo.update(id, { transcript });
-    if (!updated) {
-      return reply.status(404).send({ error: 'Consultation not found' });
-    }
-    return updated;
   });
 
   // AI structure transformation
   fastify.post('/api/consultations/:id/structure', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const { transcript } = request.body as { transcript: string };
+    try {
+      const { id } = request.params as { id: string };
+      const { transcript } = request.body as { transcript: string };
 
-    if (!transcript) {
-      return reply.status(400).send({ error: 'Transcript is required for structuring' });
+      if (!transcript) {
+        return reply.status(400).send({ error: 'Transcript is required for structuring' });
+      }
+
+      const consultation = await repo.findById(id);
+      if (!consultation) {
+        return reply.status(404).send({ error: 'Consultation not found' });
+      }
+
+      const structuredData = await aiService.structureTranscript(transcript);
+      const updated = await repo.update(id, structuredData);
+
+      return updated;
+    } catch (error) {
+      console.error(`Error structuring consultation ${request.params.id}:`, error);
+      return reply.status(500).send({ error: 'Internal server error' });
     }
-
-    const consultation = await repo.findById(id);
-    if (!consultation) {
-      return reply.status(404).send({ error: 'Consultation not found' });
-    }
-
-    const structuredData = await aiService.structureTranscript(transcript);
-    const updated = await repo.update(id, structuredData);
-
-    return updated;
   });
 }
