@@ -1,0 +1,17 @@
+{
+  "name": "stelia",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": ["packages/contracts", "backend", "frontend"],
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "build:contracts": "npm run build --workspace @stelia/contracts",
+    "typecheck": "npm run build:contracts && npm run typecheck --workspaces --if-present",
+    "test": "npm run build:contracts && npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces",
+    "check": "npm run typecheck && npm test && npm run build",
+    "dev:backend": "npm run build:contracts && npm run dev --workspace backend",
+    "dev:frontend": "npm run build:contracts && npm run dev --workspace frontend"
+  }
+}
