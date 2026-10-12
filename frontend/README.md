@@ -1,32 +1,20 @@
-# React + TypeScript + Vite
+# Frontend Stelia
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React, React Router, TypeScript, Vite et Tailwind. Les données proviennent du contrat canonique `@stelia/contracts` ; la couche HTTP valide les réponses à l'exécution. Les pages ne dépendent pas de types DOM pour le domaine médical.
 
-Currently, two official plugins are available:
+Installer depuis la racine (`npm ci --ignore-scripts`), puis `npm run dev:frontend`. Lire le [guide de démarrage](../README.md) pour configurer le compte et le backend. Le client utilise `/api` par défaut et un cookie de session HttpOnly ; aucun jeton n'est stocké dans localStorage.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm run typecheck --workspace frontend
+npm test --workspace frontend
+npm run lint --workspace frontend
+npm run build --workspace frontend
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Compiler les contrats avant un contrôle isolé : `npm run build:contracts` à la racine. Les tests React utilisent jsdom et Testing Library. Le calcul des résultats et le contrôleur de dictée sont testés sans microphone ; les essais réels restent décrits dans [manual-tests.md](../docs/manual-tests.md).
+
+Chaque workspace de consultation possède son brouillon et sa session vocale. Les finals ajoutent des segments au texte acquis ; les interims restent séparés. Les sauvegardes sont sérialisées avec révision serveur, échecs visibles et résolution explicite des conflits. La navigation interne protège les modifications non sauvegardées.
+
+En cas d'expiration de session, la reconnexion conserve les saisies et exige le même compte. Les corrections du compte rendu restent locales jusqu'à validation ; les observations sont autosauvegardées. Un rechargement forcé peut perdre les modifications locales malgré l'avertissement du navigateur. Aucun brouillon médical n'est enregistré dans localStorage.
+
+La saisie manuelle reste disponible sans microphone. Web Speech est un adaptateur facultatif ; le futur mobile utilisera son propre adaptateur vocal et les mêmes contrats HTTP, conformément à [l'architecture](../docs/architecture.md).

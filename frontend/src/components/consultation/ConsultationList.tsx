@@ -1,17 +1,5 @@
-import React from 'react';
-import type { Consultation } from '../../types/consultation';
+import type { ConsultationSummary } from '@stelia/contracts';
 import { ConsultationCard } from './ConsultationCard';
-
-interface ConsultationListProps {
-  consultations: Consultation[];
+export function ConsultationList({ consultations }: { consultations: ConsultationSummary[] }) {
+  return <div className="grid grid-cols-1 gap-3">{consultations.map((consultation) => <ConsultationCard key={consultation.id} consultation={consultation} />)}</div>;
 }
-
-export const ConsultationList: React.FC<ConsultationListProps> = ({ consultations }) => {
-  return (
-    <div className="grid grid-cols-1 gap-3">
-      {consultations.map((consultation) => (
-        <ConsultationCard key={consultation.id} consultation={consultation} />
-      ))}
-    </div>
-  );
-};

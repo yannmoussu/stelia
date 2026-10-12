@@ -1,63 +1,19 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+import {
+  ConsultationSchema, ConsultationSummarySchema,
+  type CreateConsultationInput, type UpdateConsultationInput, type SaveTranscriptInput, type ReviewInput,
+} from '@stelia/contracts';
+import { z } from 'zod';
+import { request, requestWithoutResponse } from './http';
+
+const consultationPath = (id: string) => `/consultations/${encodeURIComponent(id)}`;
 
 export const consultationService = {
-  async getConsultations(): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/consultations`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch consultations');
-    }
-    return response.json();
-  },
-
-  async getConsultation(id: string): Promise<any | null> {
-    const response = await fetch(`${API_BASE_URL}/consultations/${id}`);
-    if (response.status === 404) {
-      return null;
-    }
-    if (!response.ok) {
-      throw new Error('Failed to fetch consultation');
-    }
-    return response.json();
-  },
-
-  async createConsultation(data: any): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/consultations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to create consultation');
-    }
-    return response.json();
-  },
-
-  async updateConsultation(id: string, data: any): Promise<any | null> {
-    const response = await fetch(`${API_BASE_URL}/consultations/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (response.status === 404) {
-      return null;
-    }
-    if (!response.ok) {
-      throw new Error('Failed to update consultation');
-    }
-    return response.json();
-  },
-
-  async deleteConsultation(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/consultations/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to delete consultation');
-    }
-  },
-
-  async clearStorage(): Promise<void> {
-    // This is not implemented on the backend for security reasons
-    console.warn('clearStorage is not supported by the backend API');
-  },
+  getConsultations: (signal?: AbortSignal) => request('/consultations', z.array(ConsultationSummarySchema), { signal }),
+  getConsultation: (id: string, signal?: AbortSignal) => request(consultationPath(id), ConsultationSchema, { signal }),
+  createConsultation: (data: CreateConsultationInput, signal?: AbortSignal) => request('/consultations', ConsultationSchema, { method: 'POST', body: JSON.stringify(data), signal }),
+  updateConsultation: (id: string, data: UpdateConsultationInput, signal?: AbortSignal) => request(consultationPath(id), ConsultationSchema, { method: 'PATCH', body: JSON.stringify(data), signal }),
+  saveTranscript: (id: string, data: SaveTranscriptInput, signal?: AbortSignal) => request(`${consultationPath(id)}/transcript`, ConsultationSchema, { method: 'POST', body: JSON.stringify(data), signal }),
+  structure: (id: string, expectedRevision: number, signal?: AbortSignal) => request(`${consultationPath(id)}/structure`, ConsultationSchema, { method: 'POST', body: JSON.stringify({ expectedRevision }), signal, timeoutMs: 120_000 }),
+  review: (id: string, data: ReviewInput, signal?: AbortSignal) => request(`${consultationPath(id)}/review`, ConsultationSchema, { method: 'POST', body: JSON.stringify(data), signal }),
+  deleteConsultation: (id: string, expectedRevision: number, signal?: AbortSignal) => requestWithoutResponse(consultationPath(id), { method: 'DELETE', body: JSON.stringify({ expectedRevision }), headers: { 'Content-Type': 'application/json' }, signal }),
 };
