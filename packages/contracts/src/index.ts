@@ -108,7 +108,7 @@ export const UpdateConsultationInputSchema = RevisionSchema.extend({
 }).refine((value) => Object.keys(value).some((key) => key !== 'expectedRevision'), 'Aucune modification fournie');
 export const SaveTranscriptInputSchema = RevisionSchema.extend({ transcript: z.string().max(MAX_TRANSCRIPT_LENGTH) });
 export const StructureTranscriptInputSchema = RevisionSchema;
-export const ReviewInputSchema = RevisionSchema.extend({ data: MedicalReportSchema });
+export const ReviewInputSchema = RevisionSchema.extend({ data: MedicalReportSchema, source: z.enum(['proposal', 'manual']).default('proposal') });
 export const LoginSchema = z.strictObject({ username: z.string().trim().min(1).max(120), password: z.string().min(1).max(1_024) });
 export const UserSchema = z.strictObject({ id: z.uuid(), username: z.string().min(1).max(120) });
 export const SessionSchema = z.strictObject({ user: UserSchema });
@@ -126,7 +126,7 @@ export type CreateConsultationData = z.output<typeof CreateConsultationInputSche
 export type UpdateConsultationInput = z.infer<typeof UpdateConsultationInputSchema>;
 export type SaveTranscriptInput = z.infer<typeof SaveTranscriptInputSchema>;
 export type StructureTranscriptInput = z.infer<typeof StructureTranscriptInputSchema>;
-export type ReviewInput = z.infer<typeof ReviewInputSchema>;
+export type ReviewInput = z.input<typeof ReviewInputSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type Session = z.infer<typeof SessionSchema>;
 export type LoginInput = z.infer<typeof LoginSchema>;

@@ -1,48 +1,53 @@
-# VoxOrtho Backend
+# Backend Stelia
 
-Backend API for the VoxOrtho orthoptist SaaS. This service handles the management of orthoptic consultations and prepares for AI-driven transcription structuring.
+Node.js 24 ou ultérieur. Le serveur Fastify, les tests et les futurs clients utilisent la même factory `createApp`. Les contrats de requête, réponses et données médicales proviennent de `@stelia/contracts`.
 
-## Architecture
+## Démarrage
 
-The backend follows a layered architecture:
-- **API Layer**: Fastify server with REST endpoints.
-- **Validation Layer**: Zod schemas for request validation.
-- **Service Layer**: Business logic (e.g., `AIService` for structuring transcripts).
-- **Repository Layer**: Data access abstraction (currently in-memory).
+Depuis la racine du dépôt : `npm install`, `npm run build -w @stelia/contracts`, puis `npm run dev -w backend`. Copier la configuration exemple et renseigner un compte avant démarrage. Il n’existe aucun compte par défaut et aucune inscription publique.
 
-## Installation
+Générer un hash sans inscrire le mot de passe dans l’historique : `npm run hash-password -w backend --silent`. La saisie terminal est masquée ; la commande accepte aussi un mot de passe via stdin pour les scripts. Conserver le hash scrypt dans `STELIA_PASSWORD_HASH` et choisir `STELIA_USERNAME`. L’identifiant utilisateur est un UUID stable dérivé du nom ; changer ce nom nécessite une migration du propriétaire des dossiers.
 
-```bash
-cd backend
-npm install
-```
+Pour plusieurs comptes, renseigner `STELIA_USERS_JSON` comme une liste de `{ "id": "UUID", "username": "nom", "passwordHash": "scrypt$..." }`. Les IDs doivent rester stables. Une rotation du hash invalide les sessions existantes, sans modifier la propriété des consultations.
 
-## Running the Server
+Configuration :
+- `HOST` : `127.0.0.1` par défaut ; `PORT` : `3000`.
+- `SQLITE_PATH` : `./data/stelia.sqlite` ; stockage durable, hors Git.
+- `CORS_ORIGIN` : origines autorisées séparées par virgules ; localhost et 127.0.0.1:5173 par défaut.
+- `NODE_ENV=production` active les cookies Secure ; `STELIA_SECURE_COOKIES=true` peut aussi les activer.
+- `AI_ENDPOINT`, `AI_API_KEY`, `AI_MODEL` : les trois doivent être présents ensemble.
+- `AI_TIMEOUT_MS` : 30000 par défaut.
 
-```bash
-npm run dev
-```
-The server starts on `http://localhost:3000`.
+## API
 
-## Running Tests
+`/health` est public. Connexion : `POST /api/auth/login` avec username/password ; session : `GET /api/auth/session` ; déconnexion : `POST /api/auth/logout`. Un token opaque est placé dans un cookie HttpOnly SameSite=Strict. Le même token est accepté dans `Authorization: Bearer ...` pour un client capable de gérer la session. Cinq échecs de connexion sur une adresse IP bloquent les nouvelles tentatives pendant une fenêtre de 15 minutes ; une connexion réussie ne remet pas ce compteur à zéro. Les hashes de tokens et leur expiration sont stockés en SQLite.
 
-```bash
-npm test
-```
+Les consultations sont accessibles uniquement à leur propriétaire :
+- `GET /api/consultations` renvoie des résumés sans notes ou transcription.
+- `POST /api/consultations` crée un dossier à partir du contrat canonique et répond 201.
+- `GET /api/consultations/:id` charge le document complet.
+- `PATCH /api/consultations/:id` modifie uniquement les métadonnées validées.
+- `POST /api/consultations/:id/transcript` remplace explicitement le texte sauvegardé.
+- `POST /api/consultations/:id/structure` lit uniquement la transcription déjà sauvegardée.
+- `POST /api/consultations/:id/review` valide un compte rendu corrigé par le professionnel.
+- `DELETE /api/consultations/:id` attend un corps JSON contenant expectedRevision.
 
-## API Endpoints
+Chaque écriture après création exige `expectedRevision`. SQLite compare la révision et le propriétaire dans la même instruction SQL. Une révision dépassée produit 409 ; un dossier absent ou appartenant à quelqu’un d’autre produit 404.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/health` | GET | Health check |
-| `/api/consultations` | GET | List all consultations |
-| `/api/consultations` | POST | Create a new consultation |
-| `/api/consultations/:id` | GET | Get a consultation by ID |
-| `/api/consultations/:id/transcript` | POST | Update consultation transcript |
-| `/api/consultations/:id/structure` | POST | Structure transcript using AI (Mocked) |
+Le patient, la date et le type sont verrouillés dès qu’une proposition ou un compte rendu validé existe : les changements répondent 409 CONTEXT_LOCKED. Renvoyer les mêmes valeurs et modifier les notes reste autorisé. Ce verrouillage empêche de rattacher un compte rendu existant à un autre patient ou contexte.
 
-## JSON Schema & AI Integration
+Les erreurs utilisent `{ "error": { "code": "...", "message": "...", "details": [...] } }`. Les journaux ne contiennent ni transcription ni corps de réponse fournisseur.
 
-The file `src/domain/schemas/consultation.schema.json` defines the strict contract for structured medical data. Future AI integrations (LLMs) will use this schema to ensure that extracted data is valid and consistent.
+## Service IA et validation humaine
 
-The current AI logic is mocked in `src/services/mock-ai.service.ts`.
+Le service IA est désactivé tant que sa configuration n’est pas explicite (503 AI_NOT_CONFIGURED). Aucun mock n’est utilisé en production. L’adaptateur HTTP envoie `{ transcript, model, schema }` et attend un objet MedicalReport JSON direct. HTTPS est exigé hors localhost ; les redirections sont refusées, les réponses sont limitées à un Mo et le délai est borné.
+
+Le service métier valide strictement cette sortie. Une proposition conserve sa transcription et sa révision source ; une réponse tardive ne peut écraser une révision plus récente. Elle ne peut modifier ni patient, ni ID, ni dates. Le compte rendu ne devient completed qu’après validation humaine avec une synthèse clinique non vide.
+
+La revue utilise `source: "proposal"` par défaut ou `source: "manual"` pour une rédaction sans IA. Une modification de transcription invalide la proposition actuelle ; le compte rendu précédemment validé reste visible comme historique, avec sa source d’origine.
+
+## Vérification et limites de déploiement
+
+`npm run typecheck -w backend` et `npm test -w backend`. Les tests passent par la factory réelle et couvrent contrat, authentification, séparation des propriétaires, redémarrage, CAS, sortie IA invalide et réponse périmée.
+
+SQLite synchronise de petites opérations dans un seul processus ; il convient à cette première architecture monolithique. Le chiffrement au repos, la gestion des sauvegardes, la gestion opérationnelle des comptes et le choix du fournisseur de transcription/IA restent à configurer avant un usage avec des données réelles. Les mesures médicales sont des extractions textuelles et nécessitent une revue clinique.

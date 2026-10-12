@@ -1,9 +1,11 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 
-export async function configureCors(fastify: FastifyInstance) {
+export async function configureCors(fastify: FastifyInstance, origins: readonly string[]) {
   await fastify.register(cors, {
-    origin: 'http://localhost:5173',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: [...origins],
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 }
